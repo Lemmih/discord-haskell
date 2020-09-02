@@ -223,7 +223,9 @@ maybeEmbed = --maybe [] $ \embed -> ["embed" .= createEmbed embed]
                                           [ ("author.png", createEmbedAuthorIcon)
                                           , ("thumbnail.png", createEmbedThumbnail)
                                           , ("image.png", createEmbedImage)
-                                          , ("footer.png", createEmbedFooterIcon) ]]
+                                          , ("footer.png", createEmbedFooterIcon) ]] ++
+                                    [(n,c) | (n, Just (CreateEmbedVideoUpload c)) <-
+                                          [ ("video.mp4", createEmbedVideo) ]]
       in maybe [] (map mkPart . uploads)
 
 -- | The base url (Req) for API requests

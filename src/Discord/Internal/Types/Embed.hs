@@ -21,12 +21,19 @@ createEmbed CreateEmbed{..} =
                             CreateEmbedImageUrl t -> t
                             CreateEmbedImageUpload _ -> "attachment://" <> place <> ".png"
 
+    embedVideoToUrl :: T.Text -> CreateEmbedVideo -> T.Text
+    embedVideoToUrl place cei = case cei of
+                            CreateEmbedVideoUrl t -> t
+                            CreateEmbedVideoUpload _ -> "attachment://" <> place <> ".mp4"
+
     embedAuthor = EmbedAuthor (emptyMaybe createEmbedAuthorName)
                               (emptyMaybe createEmbedAuthorUrl)
                               (embedImageToUrl "author" <$> createEmbedAuthorIcon)
                               Nothing
     embedImage = EmbedImage   (embedImageToUrl "image" <$> createEmbedImage)
                               Nothing Nothing Nothing
+    embedVideo = EmbedVideo   (embedVideoToUrl "video" <$> createEmbedVideo)
+                              Nothing Nothing
     embedThumbnail = EmbedThumbnail (embedImageToUrl "thumbnail" <$> createEmbedThumbnail)
                               Nothing Nothing Nothing
     embedFooter = EmbedFooter createEmbedFooterText
@@ -40,13 +47,13 @@ createEmbed CreateEmbed{..} =
            , embedDescription = emptyMaybe createEmbedDescription
            , embedFields      = createEmbedFields
            , embedImage       = Just embedImage
+           , embedVideo       = Just embedVideo
            , embedFooter      = Just embedFooter
            , embedColor       = Nothing
            , embedTimestamp   = Nothing
 
            -- can't set these
            , embedType        = Nothing
-           , embedVideo       = Nothing
            , embedProvider    = Nothing
            }
 
@@ -62,6 +69,7 @@ data CreateEmbed = CreateEmbed
   , createEmbedImage       :: Maybe CreateEmbedImage
   , createEmbedFooterText  :: T.Text
   , createEmbedFooterIcon  :: Maybe CreateEmbedImage
+  , createEmbedVideo       :: Maybe CreateEmbedVideo
 --, createEmbedColor       :: Maybe T.Text
 --, createEmbedTimestamp   :: Maybe UTCTime
   } deriving (Show, Eq, Ord)
@@ -70,8 +78,24 @@ data CreateEmbedImage = CreateEmbedImageUrl T.Text
                       | CreateEmbedImageUpload B.ByteString
   deriving (Show, Eq, Ord)
 
+data CreateEmbedVideo = CreateEmbedVideoUrl T.Text
+                      | CreateEmbedVideoUpload B.ByteString
+  deriving (Show, Eq, Ord)
+
 instance Default CreateEmbed where
- def = CreateEmbed "" "" Nothing "" "" Nothing "" [] Nothing "" Nothing -- Nothing Nothing
+ def = CreateEmbed
+  { createEmbedAuthorName  = ""
+  , createEmbedAuthorUrl   = ""
+  , createEmbedAuthorIcon  = Nothing
+  , createEmbedTitle       = ""
+  , createEmbedUrl         = ""
+  , createEmbedThumbnail   = Nothing
+  , createEmbedDescription = ""
+  , createEmbedFields      = []
+  , createEmbedImage       = Nothing
+  , createEmbedFooterText  = ""
+  , createEmbedFooterIcon  = Nothing
+  , createEmbedVideo       = Nothing }
 
 -- | An embed attached to a message.
 data Embed = Embed
@@ -93,8 +117,9 @@ data Embed = Embed
 
 -- TODO
 instance ToJSON Embed where
-  toJSON Embed{..} = object
-   [ "author"      .= embedAuthor
+  toJSON Embed{..} = object $
+   [
+     "author"      .= embedAuthor
    , "title"       .= embedTitle
    , "url"         .= embedUrl
    , "description" .= embedDescription
